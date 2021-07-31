@@ -164,18 +164,5 @@ def gamescreen(screen):
             
     curses.endwin()
 
- 
-    
-
-
-def main():
-    gs = GameState()
-    gs.make_conjecture(Code(['A','A','A','A','A']))
-    gs.make_conjecture(Code(['B','B','B','B','B']))
-    gs.make_conjecture(Code(['C','C','C','C','C']))
-    gs.make_conjecture(Code(['A','B','C','D','E']))
-    gs.make_conjecture(Code(['F','G','H','A','B']))
-    print(gs)
-
 if __name__ == '__main__':
     wrapper(gamescreen)
