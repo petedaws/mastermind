@@ -3,7 +3,8 @@ from pygame.locals import *
 import random
 import os
 
-DEFAULT_CODE_LENGTH=5
+DEFAULT_CODE_LENGTH = 5
+MAX_CONJECTURES = 12
 
 WHITE={'name':'white','rgb':(255,255,255)}
 RED={'name':'red','rgb':(255,0,0)}
@@ -97,7 +98,7 @@ class Code():
         return ' '.join(output)
         
     def str_hidden(self):
-        output = ' '.join(['X' for a in self.code])
+        output = ' '.join(['\u2588' for a in self.code])
         return output
 
 def main():
