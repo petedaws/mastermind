@@ -5,33 +5,21 @@ import os
 
 DEFAULT_CODE_LENGTH=5
 
-WHITE={'name':'white','rbg':(255,255,255),'ansi':'\033[38;2;255;255;255m\u2588\033[0m'}
-RED={'name':'red','rbg':(255,0,0),'ansi':'\033[38;2;255;0;0m\u2588\033[0m'}
-BLACK={'name':'black','rbg':(0,0,0),'ansi':'\033[38;2;0;0;0m\u2588\033[0m'}
+WHITE={'name':'white','rgb':(255,255,255)}
+RED={'name':'red','rgb':(255,0,0)}
+BLACK={'name':'black','rgb':(0,0,0)}
 
-BLUE={'name':'blue','rbg':(0,0,255),'ansi':'\033[38;2;0;0;255m\u2588\033[0m'}
-LTGRN={'name':'ltgrn','rbg':(22,221,53),'ansi':'\033[38;2;22;221;53m\u2588\033[0m'}   #
-GREEN={'name':'green','rbg':(0,117,58),'ansi':'\033[38;2;0;117;58m\u2588\033[0m'}
-ORANGE={'name':'orange','rbg':(255,169,0),'ansi':'\033[38;2;255;169;0m\u2588\033[0m'}
-PURPLE={'name':'purple','rbg':(127, 0, 255),'ansi':'\033[38;2;127;0;255m\u2588\033[0m'}
-YELLOW={'name':'yellow','rbg':(255,255,0),'ansi':'\033[38;2;255;255;0m\u2588\033[0m'}
-GREY={'name':'grey','rbg':(128,128,128),'ansi':'\033[38;2;128;128;128m\u2588\033[0m'}
-PINK={'name':'pink','rbg':(241,179,179),'ansi':'\033[38;2;241;179;179m\u2588\033[0m'}
+BLUE={'name':'blue','rgb':(0,0,255)}
+LTGRN={'name':'ltgrn','rgb':(22,221,53)}
+GREEN={'name':'green','rgb':(0,117,58)}
+ORANGE={'name':'orange','rgb':(255,169,0)}
+PURPLE={'name':'purple','rgb':(127, 0, 255)}
+YELLOW={'name':'yellow','rgb':(255,255,0)}
+GREY={'name':'grey','rgb':(128,128,128)}
+PINK={'name':'pink','rgb':(241,179,179)}
 
 CODE_COLORS = [BLUE,LTGRN,GREEN,ORANGE,PURPLE,YELLOW,GREY,PINK]
-CLUE_COLORS = [RED,WHITE]
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-
+CLUE_COLORS = [RED,WHITE,BLACK]
 
 class GameBoard():
     pass
@@ -41,6 +29,7 @@ def get_clue_str(code,secret):
     copy_code = code.code.copy()
     copy_secret = secret.code.copy()
     red_index = []
+    
     #identify the reds first and keep track these elements so we can remove them from the copy
     for i,element in enumerate(copy_code):
         if element == copy_secret[i]:
@@ -60,6 +49,8 @@ def get_clue_str(code,secret):
     #fill the remaining clue places with black
     while len(clue) < len(secret.code):
         clue.append(BLACK)
+        
+    #output the clue results in a random order
     random.shuffle(clue)
     o = Code(clue)
     return o
@@ -97,8 +88,13 @@ class Code():
         return output
         
     def str_ansi(self):
-        output = ' '.join([a['ansi'] for a in self.code])
-        return output
+        output = []
+        for a in self.code:
+            r = a['rgb'][0]
+            g = a['rgb'][1]
+            b = a['rgb'][2]
+            output.append(f'\033[38;2;{r};{g};{b}m\u2588\033[0m')
+        return ' '.join(output)
         
     def str_hidden(self):
         output = ' '.join(['X' for a in self.code])
