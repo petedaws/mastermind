@@ -33,9 +33,11 @@ def get_clue(code,secret):
         copy_code.remove(element)
     
     #now identify the whites
-    for i,element in enumerate(copy_code):
+    for element in copy_code:
         if element in copy_secret:
             clue.append(CORRECT_VALUE)
+            copy_secret.remove(element)
+
 
     #fill the remaining clue places with black
     while len(clue) < len(secret.code):
