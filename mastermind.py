@@ -18,8 +18,8 @@ Y_SCREEN_CONJECTOR_OFFSET = MAX_CONJECTURES
 
 def get_clue(code,secret):
     clue = []
-    copy_code = code.code.copy()
-    copy_secret = secret.code.copy()
+    copy_code = code.copy()
+    copy_secret = secret.copy()
     red_index = []
     #identify the reds first and keep track these elements so we can remove them from the copy
     for i,element in enumerate(copy_code):
@@ -40,131 +40,159 @@ def get_clue(code,secret):
 
 
     #fill the remaining clue places with black
-    while len(clue) < len(secret.code):
+    while len(clue) < len(secret):
         clue.append(INCORRECT_VALUE)
     
     #output the clue results in a random order
     random.shuffle(clue)
-    o = Code(clue)
-    return o
+    return clue
         
-   
+def generate_random(code_length):
+    code = []
+    for i in range(code_length):
+        code.append(random.choice(CODE_VALUES))
+    return code
+
+def str_code(code):
+    output = ' '.join([a for a in code])
+    return output
+    
+def str_hidden(code):
+    output = ' '.join(['\u2588' for a in code])
+    return output
+
 class GameState():
     def __init__(self):
-        self.secret = Code()
-        self.secret.generate_random()
+        self.code_length = CODE_LENGTH
+        self.code_values = CODE_VALUES
+        self.max_conjectures = MAX_CONJECTURES
+        self.secret = generate_random(self.code_length)
         self.conjectures = []
         self.clues = []
     
     def make_conjecture(self,conjecture):
-        cj = Code(conjecture.copy())
-        self.conjectures.append(cj)
-        self.clues.append(get_clue(cj,self.secret))
-    
-    def __str__(self):
-        output = []
-        
-        for i,conjecture in enumerate(reversed(self.conjectures)):
-            output.append(f'#:{len(self.conjectures)-i}\t{conjecture}\t[{self.clues[i]}]')
-        output.append(f'#:S\t{self.secret}')
-        return '\n\n'.join(output)
-        
-class Code():
-    def __init__(self,code=[],code_length=CODE_LENGTH):
-        self.code_length = code_length
-        self.code = code
-        
-    def generate_random(self):
-        for i in range(self.code_length):
-            self.code.append(random.choice(CODE_VALUES))
-    
-    def __str__(self):
-        output = ' '.join([a for a in self.code])
-        return output
-    
-    def copy(self):
-        return self.code.copy()
-    
-    def str_hidden(self):
-        output = ' '.join(['\u2588' for a in self.code])
-        return output
-        
-    def hidden(self):
-        return ['\u2588' for a in self.code]
+        self.conjectures.append(conjecture.copy())
+        self.clues.append(get_clue(conjecture,self.secret))
 
-
-def gamescreen(screen):
+def curses_setup():
     curses.noecho()
     curses.start_color()
     curses.use_default_colors()
-    screen.clear()
-    screen_dimensions = screen.getmaxyx()
-    y_cursor_position = Y_SCREEN_CURSOR_OFFSET
-    X_SCREEN_OFFSET = int(screen_dimensions[1] / 2) - CODE_LENGTH # the game is played in the middle of the screen
-    x_cursor_position = X_SCREEN_OFFSET
-    input_key = -1
-    selection_position = 0
-    selection = 0
-    current_conjecture = Code([' '] * CODE_LENGTH)
-    gs = GameState()
-    show_answer = False
-    while input_key != 'q':
-        screen.clear()
-        screen.addstr(y_cursor_position, x_cursor_position, '\u25B2') # This is the position of the small triangle cursor
-        screen.addstr(y_cursor_position-1, X_SCREEN_OFFSET, ' '.join(['\u203E'] * CODE_LENGTH)) # This is the position of the overscores
-        
+  
+class GameScreen():
 
-        for i,code_value in enumerate(current_conjecture.code): # this is where the current conjection gets placed
-            if i == selection_position:
-                screen.addstr(y_cursor_position-2, X_SCREEN_OFFSET+i*2, CODE_VALUES[selection])
+    def __init__(self):
+        
+        self.cursor_position = 0
+        self.selection = 0
+        self.gs = GameState()
+        self.show_answer = False
+        self.current_conjecture = [' '] * self.gs.code_length
+
+        # assign_callbacks
+        self.assign_callbacks()
+
+    def setup_screen(self,screen):
+        self.screen = screen
+        curses.noecho()
+        curses.start_color()
+        curses.use_default_colors()
+        
+        self.screen_dimensions = self.screen.getmaxyx()
+        
+        # this is so we have enough room for the max number of conjectures
+        self.game_botton = self.gs.max_conjectures
+        
+        # the means the game is in the middle of the screen
+        self.game_left = int(self.screen_dimensions[1] / 2) - self.gs.code_length
+        
+        self.mainloop()
+    
+    def assign_callbacks(self):
+        self.callback = {'a':self.move_cursor_left,
+                         'd':self.move_cursor_right,
+                         'w':self.cycle_selection_up,
+                         's':self.cycle_selection_down,
+                         ' ':self.enter_selection,
+                         'e':self.submit_conjecture,
+                         'h':self.toggle_show_answer}
+    
+    def mainloop(self):
+        input_key = -1
+        while input_key != 'q':
+            self.screen.clear()
+            self.draw_cursor()
+            self.draw_current_conjecture()
+            self.draw_historical_conjectures() 
+            self.draw_secret()            
+            input_key = self.screen.getkey()
+            self.handle_keypress(input_key)
+            self.screen.refresh()
+        curses.endwin()
+    
+    def invalid_key(self):
+        pass
+    
+    def move_cursor_left(self): 
+        self.cursor_position -= 1
+        if self.cursor_position < 0:
+            self.cursor_position = self.gs.code_length-1
+           
+    def move_cursor_right(self):
+        self.cursor_position += 1
+        if self.cursor_position > self.gs.code_length-1:
+            self.cursor_position = 0
+    
+    def handle_keypress(self,input_key):
+        self.callback.get(input_key,self.invalid_key)()
+        
+    def cycle_selection_up(self):
+        self.selection += 1
+        if self.selection > len(self.gs.code_values)-1:
+            self.selection = 0
+            
+    def cycle_selection_down(self):
+        self.selection -= 1
+        if self.selection < 0:
+            self.selection = len(self.gs.code_values)-1
+        
+    def enter_selection(self):
+        self.current_conjecture[self.cursor_position] = self.gs.code_values[self.selection]
+        
+    def submit_conjecture(self):
+        self.gs.make_conjecture(self.current_conjecture)
+        self.current_conjecture = [' '] * self.gs.code_length
+        
+    def toggle_show_answer(self):
+            self.show_answer = not self.show_answer
+            
+    def draw_cursor(self):
+        # This is the position of the small triangle cursor
+        self.screen.addstr(self.game_botton, self.game_left + self.cursor_position*2, '\u25B2')
+        
+        # This is the position of the overscores
+        self.screen.addstr(self.game_botton-1, self.game_left, ' '.join(['\u203E'] * CODE_LENGTH)) 
+        
+    def draw_current_conjecture(self):
+        for i,_ in enumerate(self.current_conjecture): # this is where the current conjecture gets placed
+            if i == self.cursor_position:
+                self.screen.addstr(self.game_botton-2, self.game_left+i*2, self.gs.code_values[self.selection])
             else:
-                screen.addstr(y_cursor_position-2, X_SCREEN_OFFSET+i*2, current_conjecture.code[i])
-                
-        if show_answer:
-            screen.addstr(y_cursor_position+1, X_SCREEN_OFFSET, ' '.join(gs.secret.code))
+                self.screen.addstr(self.game_botton-2, self.game_left+i*2, self.current_conjecture[i])
+    
+    def draw_historical_conjectures(self):
+        for i,conj in enumerate(self.gs.conjectures): # These are the historical conjectures
+            self.screen.addstr(self.game_botton-5-i,
+                          self.game_left-4,
+                          f'{i:02}| {str_code(conj)}\t[{str_code(self.gs.clues[i])}]'
+                          )
+
+    def draw_secret(self):
+        if self.show_answer:
+            self.screen.addstr(self.game_botton+1, self.game_left, str_code(self.gs.secret))
         else:
-            screen.addstr(y_cursor_position+1, X_SCREEN_OFFSET, ' '.join(gs.secret.hidden()))
-        
-        screen.addstr(y_cursor_position-4-len(gs.conjectures), X_SCREEN_OFFSET-3, '>') # this is an arrow pointing to the next conjecture location
-        for i,conj in enumerate(gs.conjectures): # These are the historical conjectures
-            screen.addstr(y_cursor_position-5-i, X_SCREEN_OFFSET-4, f'{i:02}| {conj}\t[{gs.clues[i]}]')
-        
-        screen.refresh()
-        input_key = screen.getkey()
-        if input_key == 'd':
-            selection_position += 1
-            if selection_position > CODE_LENGTH-1:
-                selection_position = 0
-                
-        elif input_key == 'a':
-            selection_position -= 1
-            if selection_position < 0:
-                selection_position = CODE_LENGTH-1
-                
-        elif input_key == 'w':
-            selection += 1
-            if selection > len(CODE_VALUES)-1:
-                selection = 0
-                
-        elif input_key == 's':
-            selection -= 1
-            if selection < 0:
-                selection = len(CODE_VALUES)-1
-                
-        elif input_key == ' ':
-            current_conjecture.code[selection_position] = CODE_VALUES[selection]
-            
-        elif input_key == 'e':
-            gs.make_conjecture(current_conjecture)
-            current_conjecture = Code([' '] * CODE_LENGTH)
-            
-        elif input_key == 'h':
-            show_answer = not show_answer
-            
-        x_cursor_position = X_SCREEN_OFFSET + selection_position * 2
-        
-            
-    curses.endwin()
+            self.screen.addstr(self.game_botton+1, self.game_left, str_hidden(self.gs.secret))
 
 if __name__ == '__main__':
-    wrapper(gamescreen)
+    gs = GameScreen()
+    wrapper(gs.setup_screen)
