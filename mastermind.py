@@ -13,8 +13,6 @@ INCORRECT_VALUE = ' '
 
 # SCREEN PARAMS
 Y_SCREEN_CURSOR_OFFSET = MAX_CONJECTURES + 5
-Y_SCREEN_CONJECTOR_OFFSET = MAX_CONJECTURES
-
 
 def get_clue(code,secret):
     clue = []
@@ -171,7 +169,7 @@ class GameScreen():
         self.screen.addstr(self.game_botton, self.game_left + self.cursor_position*2, '\u25B2')
         
         # This is the position of the overscores
-        self.screen.addstr(self.game_botton-1, self.game_left, ' '.join(['\u203E'] * CODE_LENGTH)) 
+        self.screen.addstr(self.game_botton-1, self.game_left, ' '.join(['\u203E'] * self.gs.code_length)) 
         
     def draw_current_conjecture(self):
         for i,_ in enumerate(self.current_conjecture): # this is where the current conjecture gets placed
