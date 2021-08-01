@@ -99,7 +99,7 @@ class GameScreen():
         self.screen_dimensions = self.screen.getmaxyx()
         
         # this is so we have enough room for the max number of conjectures
-        self.game_botton = self.gs.max_conjectures
+        self.game_botton = self.screen_dimensions[0] - 5
         
         # the means the game is in the middle of the screen
         self.game_left = int(self.screen_dimensions[1] / 2) - self.gs.code_length
@@ -166,7 +166,7 @@ class GameScreen():
             
     def draw_cursor(self):
         # This is the position of the small triangle cursor
-        self.screen.addstr(self.game_botton, self.game_left + self.cursor_position*2, '\u25B2')
+        self.screen.addstr(self.game_botton, self.game_left + self.cursor_position*2, '^')
         
         # This is the position of the overscores
         self.screen.addstr(self.game_botton-1, self.game_left, ' '.join(['\u203E'] * self.gs.code_length)) 
