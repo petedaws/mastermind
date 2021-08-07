@@ -73,11 +73,6 @@ class GameState():
     def make_conjecture(self,conjecture):
         self.conjectures.append(conjecture.copy())
         self.clues.append(get_clue(conjecture,self.secret))
-
-def curses_setup():
-    curses.noecho()
-    curses.start_color()
-    curses.use_default_colors()
   
 class GameScreen():
 
