@@ -85,7 +85,7 @@ class GameScreen():
         self.selection = 0
         self.gs = GameState()
         self.show_answer = False
-        self.current_conjecture = [' '] * self.gs.code_length
+        self.current_conjecture = ['A'] * self.gs.code_length
 
         # assign_callbacks
         self.assign_callbacks()
@@ -122,7 +122,8 @@ class GameScreen():
             self.draw_cursor()
             self.draw_current_conjecture()
             self.draw_historical_conjectures() 
-            self.draw_secret()            
+            self.draw_secret()
+            self.draw_user_manual()
             input_key = self.screen.getkey()
             self.handle_keypress(input_key)
             self.screen.refresh()
@@ -135,11 +136,13 @@ class GameScreen():
         self.cursor_position -= 1
         if self.cursor_position < 0:
             self.cursor_position = self.gs.code_length-1
+        self.selection = self.gs.code_values.index(self.current_conjecture[self.cursor_position])
            
     def move_cursor_right(self):
         self.cursor_position += 1
         if self.cursor_position > self.gs.code_length-1:
             self.cursor_position = 0
+        self.selection = self.gs.code_values.index(self.current_conjecture[self.cursor_position])
     
     def handle_keypress(self,input_key):
         self.callback.get(input_key,self.invalid_key)()
@@ -159,11 +162,20 @@ class GameScreen():
         
     def submit_conjecture(self):
         self.gs.make_conjecture(self.current_conjecture)
-        self.current_conjecture = [' '] * self.gs.code_length
         
     def toggle_show_answer(self):
             self.show_answer = not self.show_answer
-            
+
+    def draw_user_manual(self):
+        self.screen.addstr(self.game_botton-10, 4, 'A <> D  - move cursor left and right')
+        self.screen.addstr(self.game_botton- 9, 4, 'w <> S  - cycle through the letters')
+        self.screen.addstr(self.game_botton- 8, 4, '<space> - enter the cursor value')
+        self.screen.addstr(self.game_botton- 7, 4, 'E       - enter a guess')
+        self.screen.addstr(self.game_botton- 6, 4, 'H       - check answer')
+        self.screen.addstr(self.game_botton- 5, 4, '______________________')
+        self.screen.addstr(self.game_botton- 4, 4, 'X       - correct letter and position')
+        self.screen.addstr(self.game_botton- 3, 4, '!       - correct letter, wrong position')
+
     def draw_cursor(self):
         # This is the position of the small triangle cursor
         self.screen.addstr(self.game_botton, self.game_left + self.cursor_position*2, '^')
