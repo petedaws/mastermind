@@ -11,8 +11,10 @@ CORRECT_VALUE = '!'
 CORRECT_VALUE_AND_POSITION = 'X'
 INCORRECT_VALUE = ' '
 
+
 # SCREEN PARAMS
 Y_SCREEN_CURSOR_OFFSET = MAX_CONJECTURES + 5
+SCREEN_MARGIN = 5
 
 def get_clue(code,secret):
     clue = []
@@ -95,15 +97,8 @@ class GameScreen():
         curses.noecho()
         curses.start_color()
         curses.use_default_colors()
-        
-        self.screen_dimensions = self.screen.getmaxyx()
-        
-        # this is so we have enough room for the max number of conjectures
-        self.game_botton = self.screen_dimensions[0] - 5
-        
-        # the means the game is in the middle of the screen
-        self.game_left = int(self.screen_dimensions[1] / 2) - self.gs.code_length
-        
+        curses.curs_set(0)
+        self.update_screen_dimensions()
         self.mainloop()
     
     def assign_callbacks(self):
@@ -119,6 +114,7 @@ class GameScreen():
         input_key = -1
         while input_key != 'q':
             self.screen.clear()
+            self.update_screen_dimensions()
             self.draw_cursor()
             self.draw_current_conjecture()
             self.draw_historical_conjectures() 
@@ -165,16 +161,30 @@ class GameScreen():
         
     def toggle_show_answer(self):
             self.show_answer = not self.show_answer
+    
+    def update_screen_dimensions(self):
+        self.screen_dimensions = self.screen.getmaxyx()
+        
+        # this is so we have enough room for the max number of conjectures
+        self.game_botton = self.screen_dimensions[0] - SCREEN_MARGIN
+        
+        # the means the game is in the middle of the screen
+        self.game_left = int(self.screen_dimensions[1] / 2) - self.gs.code_length
 
     def draw_user_manual(self):
-        self.screen.addstr(self.game_botton-10, 4, 'A <> D  - move cursor left and right')
-        self.screen.addstr(self.game_botton- 9, 4, 'w <> S  - cycle through the letters')
-        self.screen.addstr(self.game_botton- 8, 4, '<space> - enter the cursor value')
-        self.screen.addstr(self.game_botton- 7, 4, 'E       - enter a guess')
-        self.screen.addstr(self.game_botton- 6, 4, 'H       - check answer')
-        self.screen.addstr(self.game_botton- 5, 4, '______________________')
-        self.screen.addstr(self.game_botton- 4, 4, 'X       - correct letter and position')
-        self.screen.addstr(self.game_botton- 3, 4, '!       - correct letter, wrong position')
+        user_manual_screen_lines = ['A <> D  - move cursor left and right',
+                                    'w <> S  - cycle through the letters',
+                                    '<space> - enter the cursor value',
+                                    'E       - enter a guess',
+                                    'H       - check answer',
+                                    'Q       - Quit Game',
+                                    '______________________',
+                                    'X       - correct letter and position',
+                                    '!       - correct letter, wrong position'
+                                    ]
+                                    
+        for i, line in enumerate(reversed(user_manual_screen_lines)):
+            self.screen.addstr(self.game_botton-SCREEN_MARGIN-i, SCREEN_MARGIN, line)
 
     def draw_cursor(self):
         # This is the position of the small triangle cursor
@@ -193,9 +203,9 @@ class GameScreen():
     def draw_historical_conjectures(self):
         for i,conj in enumerate(self.gs.conjectures): # These are the historical conjectures
             self.screen.addstr(self.game_botton-5-i,
-                          self.game_left-4,
-                          f'{i:02}| {str_code(conj)}\t[{str_code(self.gs.clues[i])}]'
-                          )
+                               self.game_left-4,
+                               f'{i:02}| {str_code(conj)}\t[{str_code(self.gs.clues[i])}]'
+                              )
 
     def draw_secret(self):
         if self.show_answer:
